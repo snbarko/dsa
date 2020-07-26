@@ -1,4 +1,5 @@
 #include <iostream>
+#include <memory>
 
 using namespace std;
 
@@ -8,9 +9,9 @@ template <typename T>
 class Stack
 {
 public:
-    virtual bool push(T) = 0;
-    virtual bool pop(T&) = 0;
-    virtual bool peek(T&) = 0;
+    virtual bool push(T&) = 0;
+    virtual bool pop(T**) = 0;
+    virtual bool peek(T**) = 0;
     virtual size_t size() = 0;
     virtual bool isEmpty() = 0;
     virtual bool isFull() = 0;
@@ -19,13 +20,143 @@ public:
     virtual ~Stack() = default;
 };
 
+template <class T>
+class StackLL : public Stack<T>
+{
+public:
+    bool push(T&) override;
+    bool pop(T**) override;
+    bool peek(T**) override;
+    void display() override;
+    size_t size() { return mSize; }
+    bool isEmpty() { return (top == NULL); }
+    bool isFull() { return (mSize == Size); }
+
+    StackLL(size_t size): Size(size), top(NULL),
+                          mSize(0)
+    {
+        cout << "Linked List Array initialized" << endl;
+    }
+private:
+    const int Size;
+    T* top;
+    int mSize;
+};
+
+template <typename T>
+class StackLinks
+{
+private:
+    T* llprev;
+    T* llnext;
+    friend class StackLL<T>;
+};
+
+class Node : public StackLinks<Node>
+{
+public:
+    Node(int num) : data(num) {}
+    friend ostream& operator <<(ostream& os, const Node& node)
+    {
+        os << node.data;
+        return os;
+    }
+    int operator*()
+    {
+        return data;
+    }
+private:
+    int data;
+};
+
+template <typename T>
+void StackLL<T>::display()
+{
+    if (isEmpty())
+    {
+        cout << "Nothing to display" << endl;
+        return;
+    }
+
+    T* temp = top;
+    while (temp)
+    {
+        cout << *temp << endl;
+        temp = temp->llprev;
+    }
+}
+
+template <typename T>
+bool StackLL<T>::push(T& elem)
+{
+    if (isFull())
+    {
+        cout << "Stack is full" << endl;
+        return false;
+    }
+
+    if (isEmpty())
+    {
+        top = &elem;
+        top->llprev = NULL;
+    }
+    else
+    {
+        top->llnext = &elem;
+        elem.llprev = top;
+        top = &elem;
+    }
+    top->llnext = NULL;
+    mSize++;
+    return true;
+}
+
+template <typename T>
+bool StackLL<T>::pop(T** elem)
+{
+    if (isEmpty())
+    {
+        cout << "Stack is empty" << endl;
+        return false;
+    }
+
+    mSize--;
+    *elem = top;
+
+    if (top->llprev == NULL)
+    {
+        top = NULL;
+    }
+    else
+    {
+        T* temp = top;
+        top = top->llprev;
+        temp->llprev = NULL;
+    }
+
+    return true;
+}
+
+template <typename T>
+bool StackLL<T>::peek(T** elem)
+{
+    if (isEmpty())
+    {
+        cout << "Stack is empty" << endl;
+        return false;
+    }
+    *elem = top;
+
+    return true;
+}
+
 template <typename T>
 class StackArray : public Stack<T>
 {
 public:
-    bool push(T) override;
-    bool pop(T&) override;
-    bool peek(T&) override;
+    bool push(T&) override;
+    bool pop(T**) override;
+    bool peek(T**) override;
     void display() override;
     size_t size() { return top + 1; }
     bool isEmpty() { return (top == -1); }
@@ -33,7 +164,7 @@ public:
 
     StackArray(size_t size): Size(size), top(-1)
     {
-        cout << "Stack initialized" << endl;
+        cout << "Stack Array initialized" << endl;
     }
 private:
     const int Size;
@@ -57,7 +188,7 @@ void StackArray<T>::display()
 }
 
 template <typename T>
-bool StackArray<T>::push(T elem)
+bool StackArray<T>::push(T& elem)
 {
     if (isFull())
     {
@@ -71,7 +202,7 @@ bool StackArray<T>::push(T elem)
 }
 
 template <typename T>
-bool StackArray<T>::pop(T& elem)
+bool StackArray<T>::pop(T** elem)
 {
     if (isEmpty())
     {
@@ -79,89 +210,25 @@ bool StackArray<T>::pop(T& elem)
         return false;
     }
 
-    elem = arr[top--];
+    *elem = &arr[top--];
     return true;
 }
 
 template <typename T>
-bool StackArray<T>::peek(T& elem)
+bool StackArray<T>::peek(T** elem)
 {
     if (isEmpty())
     {
         cout << "Stack is empty" << endl;
         return false;
     }
-    elem = arr[top];
+    *elem = &arr[top];
 
     return true;
 }
 
 template <typename T>
-void genericOptions(T elem, Stack<T>& stack)
-{
-    while (1)
-    {
-        cout << "Welcome to stack. Enter options as below\n1. Push\n2. Pop\n"
-            "3. Peek\n4. Size\n5. IsEmpty\n6. IsFull\n7. Display\n8. Exit\n" << endl;
-        int ch = -1;
-        cin >> ch;
-        bool status = false;
-        switch(ch)
-        {
-        case 1:
-            if (stack.isFull())
-            {
-                cout << "Stack is full" << endl;
-                break;
-            }
-            cout << "Enter element to push: ";
-            cin >> elem;
-            status = stack.push(elem);
-            cout << "Push status: " << status << endl;
-            break;
-        case 2:
-            status = stack.pop(elem);
-            cout << "Pop status: " << status ? "success" : "failed";
-            if (status)
-                cout << " Element: " << endl;
-            else
-                cout << endl;
-            break;
-        case 3:
-            status = stack.peek(elem);
-            cout << "Peek status: " << status ? "success" : "failed";
-            if (status)
-                cout << " Element: " << endl;
-            else
-                cout << endl;
-                                                   
-            break;
-        case 4:
-            cout << "Size of stack: " << stack.size() << endl;
-            break;
-        case 5:
-            cout << "IsEmpty: " << stack.isEmpty() << endl;
-            break;
-        case 6:
-            cout << "IsFull: " << stack.isFull() << endl;
-            break;
-        case 7:
-            cout << "Stack: " <<endl;
-            stack.display();
-            break;
-        case 8:
-            cout << "Exiting." << endl;
-            exit(0);
-        default:
-            cout << "Invalid Option Provided. Exiting." << endl;
-            exit(-1);
-            break;
-        }
-    }
-}
-
-template <typename T>
-void runTestCases(Stack<T>& stack, size_t size)
+void runTestCases(Stack<T>& stack, int size)
 {
     // Empty stack test cases
     ASSERTME(stack.size() == 0);
@@ -170,36 +237,47 @@ void runTestCases(Stack<T>& stack, size_t size)
 
     // Push test cases
     int baseNum(46);
-    T number(baseNum);
     for (int i = 0; i < size; i++)
     {
         ASSERTME(!stack.isFull());
-        T node(baseNum + (11* i));
-        ASSERTME(stack.push(node));
+        T* node = new T(baseNum + (11* i));
+        ASSERTME(stack.push(*node));
         ASSERTME(stack.size() == (i+1));
         ASSERTME(!stack.isEmpty());
-        T var = -1;
-        ASSERTME(stack.peek(var));
-        ASSERTME(var == (baseNum + (11* i)));
+        T* var = NULL;
+        ASSERTME(stack.peek(&var));
+        // if (is_same<T, Node>::value)
+        // {
+        //     ASSERTME(**var == (baseNum + (11* i)));
+        // }
     }
 
     stack.display();
 
     // Full test cases
-    ASSERTME(!stack.push(baseNum));
-    ASSERTME(stack.isFull());
+    {
+        T* number = new T(baseNum);
+        ASSERTME(!stack.push(*number));
+        ASSERTME(stack.isFull());
+        // delete number;
+    }
 
     // Pop test cases
     for (int i = 0; i < size; i++)
     {
         ASSERTME(!stack.isEmpty());
         ASSERTME(stack.size() == (size - i));
-        ASSERTME(stack.pop(number));
+        T *number = NULL;
+        ASSERTME(stack.pop(&number));
+        // delete number;
         ASSERTME(!stack.isFull());
     }
 
-    ASSERTME(!stack.pop(number));
-    ASSERTME(!stack.peek(number));
+    {
+        T *number = NULL;
+        ASSERTME(!stack.pop(&number));
+        ASSERTME(!stack.peek(&number));
+    }
     ASSERTME(stack.size() == 0);
     ASSERTME(stack.isEmpty());
     ASSERTME(!stack.isFull());
@@ -209,24 +287,23 @@ void runTestCases(Stack<T>& stack, size_t size)
 
 int main ()
 {
+    int size = 5;
     {
-        Stack<int>* stack = new StackArray<int>(5);
-        // int elem = -1;
-        // genericOptions(elem, *stack);
-
+        std::unique_ptr<Stack<int>> stack(new StackArray<int>(size));
         runTestCases<int>(*stack, 5);
-        delete stack;
     }
     {
-        Stack<char>* stack = new StackArray<char>(5);
+        std::unique_ptr<Stack<char>> stack(new StackArray<char>(size));
         runTestCases<char>(*stack, 5);
-        delete stack;
     }
     {
-        Stack<double>* stack = new StackArray<double>(5);
+        std::unique_ptr<Stack<double>> stack(new StackArray<double>(size));
         runTestCases<double>(*stack, 5);
-        delete stack;
     }
-
+    {
+        std::unique_ptr<Stack<Node>> stack(new StackLL<Node>(size));
+        runTestCases<Node>(*stack, 5);
+    }
     return 0;
 }
+
