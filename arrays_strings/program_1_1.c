@@ -5,7 +5,8 @@
 
 #define TEST_CASE(A, B, C) { if(A(B) != C) { printf("Test Case failure -> %s(%s) != %s.\n", #A, #B, #C); /*return;*/ } }
 
-int no_resource_method(char* string)
+// O(n^2)
+int brute_force_method(char* string)
 {
     int len = strlen(string);
     if (len == 0)
@@ -28,9 +29,35 @@ int no_resource_method(char* string)
     return 1;
 }
 
+// O(n)
+int my_optimized_method_hash_table(char* string)
+{
+    int len = strlen(string);
+    if (len == 0)
+        return 0;
+    if (len == 1)
+        return 1;
+    int j;
+    int diff = 'a' - 'A';
+    int hash[256] = {0};
+    for (j = 0; j < len; j++)
+    {
+        int key = string[j] % 256;
+
+        if ((string[j] >= 'a') && (string[j] <= 'z'))
+            key-=diff;
+
+        if (hash[key] == 1)
+            return 0;
+        hash[key] = 1;
+    }
+    return 1;
+}
+
 int is_unique(char* string)
 {
-    return no_resource_method(string);
+    /* return brute_force_method(string); */
+    return optimized_method_hash_table(string);
 }
 
 void run_test_cases()
